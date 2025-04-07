@@ -80,8 +80,6 @@ const UserLogIn = async (req, res) => {
 
         const { name, email, password } = req.body;
 
-
-
         const user = await User.findOne({
             where: { email: email },
             attributes: ['id', 'name', 'email', 'password', 'token']
@@ -104,12 +102,13 @@ const UserLogIn = async (req, res) => {
                 status: PAGE_NOT_FOUND,
                 message: "Invalid Credentials",
                 data: "",
-                error: "Password doesn't match"
+                error: "Passwords doesn't match"
             })
         }
 
         const secretKey = process.env.SECRET_KEY;
         const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: '1h' });
+
         const result = await User.update(
             { token: token },
             {
@@ -118,23 +117,6 @@ const UserLogIn = async (req, res) => {
                 },
             },
         );
-        if (!user) {
-            return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        if (user.password !== password) {
-            return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
 
         req.session.user = { name };
         return res.status(200).json({
@@ -150,7 +132,7 @@ const UserLogIn = async (req, res) => {
             status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
             data: '',
             message: '',
-            error: ''
+            error: error.message
         });
     }
 }
@@ -159,7 +141,6 @@ const UserLogOut = async (req, res) => {
     try {
 
         const { token } = req.body;
-
 
         const user = await User.findOne({
             where: { token: token },

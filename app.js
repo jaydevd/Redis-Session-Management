@@ -5,7 +5,7 @@ const redis = require('redis');
 const { RedisStore } = require('connect-redis');
 const router = require('./api/routes/index');
 const bodyParser = require('body-parser');
-const { connect } = require('./api/routes');
+require('./api/models/User');
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -15,6 +15,8 @@ const client = redis.createClient({
     host: 'localhost',
     port: 6379
 });
+
+client.connect();
 
 const redisStore = new RedisStore({
     client: client,
