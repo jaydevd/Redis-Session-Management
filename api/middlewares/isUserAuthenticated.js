@@ -10,7 +10,7 @@
  */
 
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/index.js');
+const { User } = require('./../models/User.js');
 const { HTTP_STATUS_CODES } = require('../config/constants.js');
 
 const isUserAuthenticated = async (req, res, next) => {
@@ -71,8 +71,9 @@ const isUserAuthenticated = async (req, res, next) => {
                 error: "Tokens don't match"
             });
         }
-
-        req.user = user;
+        if (req.session.user) {
+            req.user = user;
+        }
         next();
     }
     catch (error) {

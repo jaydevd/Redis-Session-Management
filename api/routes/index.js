@@ -9,13 +9,16 @@
 const express = require('express');
 
 const { UserAuthRoutes } = require('./user/authentication/UserAuthRoutes.js');
-const { ChatRoutes } = require('./user/communication/ChatRoutes.js');
-const { ProfileRoutes } = require('./user/profile/ProfileRoutes.js');
+const isUserAuthenticated = require('../middlewares/isUserAuthenticated.js');
 const router = express.Router();
 
 // user routes
 router.use('/user/authentication', UserAuthRoutes);
-router.use('/user/communication', ChatRoutes);
-router.use('/user/profile', ProfileRoutes);
+
+router.route('/user/dashboard')
+    .all(isUserAuthenticated)
+    .get((req, res) => {
+        res.send(`Welcome to your dashboard, ${req.session.user.name}!`);
+    })
 
 module.exports = router;

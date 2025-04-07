@@ -8,7 +8,7 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { User } = require('./../../../models/index');
+const { User } = require('./../../../models/User');
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
@@ -78,13 +78,13 @@ const UserSignUp = async (req, res) => {
 const UserLogIn = async (req, res) => {
     try {
 
+        const { name, email, password } = req.body;
 
 
-        const { email, password } = req.body;
 
         const user = await User.findOne({
             where: { email: email },
-            attributes: ['id', 'name', 'email', 'password', 'age', 'gender', 'country', 'city', 'company', 'token']
+            attributes: ['id', 'name', 'email', 'password', 'token']
         });
 
         if (!user) {
@@ -118,31 +118,32 @@ const UserLogIn = async (req, res) => {
                 },
             },
         );
-
-        executeLoginDbCommand(req.body.Email, req.body.Password, (dbResult) => {
-            if (!dbResult) {
-                return res.status(401).json({
-                    status: HTTP_STATUS_CODES.UNAUTHORIZED,
-                    message: 'Login failed ! Please register',
-                    data: '',
-                    error: ''
-                })
-            }
-            req.session.key = dbResult;
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS,
-                message: 'Login success.',
+        if (!user) {
+            return res.status(401).json({
+                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                message: '',
                 data: '',
                 error: ''
             })
-        });
+        }
 
+        if (user.password !== password) {
+            return res.status(401).json({
+                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+
+        req.session.user = { name };
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
-            data: { user, token },
             message: '',
+            data: `Hello ${name}, you are now logged in.`,
             error: ''
-        });
+        })
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -159,6 +160,7 @@ const UserLogOut = async (req, res) => {
 
         const { token } = req.body;
 
+
         const user = await User.findOne({
             where: { token: token },
             attributes: ['id', 'token']
@@ -174,6 +176,11 @@ const UserLogOut = async (req, res) => {
         }
 
         await User.update({ token: null }, { where: { id: user.id } });
+
+        req.session.destroy((err) => {
+            if (err) return res.status(500).send('Could not log out.');
+            res.send('Logged out successfully.');
+        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,

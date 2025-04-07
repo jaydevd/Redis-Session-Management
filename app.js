@@ -1,22 +1,30 @@
 require('dotenv').config();
 const express = require("express");
 const session = require('express-session');
-const redis = require("redis");
-const redisStore = require('connect-redis')(session);
-const redisClient = redis.createClient();
-const router = require('./api/routes/user/authentication/UserAuthRoutes');
+const redis = require('redis');
+const { RedisStore } = require('connect-redis');
+const router = require('./api/routes/index');
+const bodyParser = require('body-parser');
+const { connect } = require('./api/routes');
 const app = express();
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+const client = redis.createClient({
+    host: 'localhost',
+    port: 6379
+});
+
+const redisStore = new RedisStore({
+    client: client,
+});
+
 app.use(session({
-    secret: 'mysecret',
-    // create new redis store.
-    store: new redisStore({
-        host: 'localhost',
-        port: 6379,
-        client: redisClient
-    }),
-    saveUninitialized: false,
-    resave: false
+    store: redisStore,
+    secret: process.env.SECRET_KEY,
+    resave: false,
+    saveUninitialized: false
 }));
 
 app.use('/', router);
